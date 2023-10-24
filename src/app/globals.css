@@ -25,3 +25,13 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+.tooltip {
+  opacity: 0;
+  transition: opacity 0.1s ease-in-out; /* Adjust the duration and easing function as needed */
+}
+
+.tooltip.active {
+  opacity: 0.8;
+  transition: opacity 0.5s ease-in-out; /* Adjust the duration and easing function as needed */
+}
