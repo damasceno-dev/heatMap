@@ -47,6 +47,10 @@ export default function Home() {
   if (result === undefined) {
     return;
   }
+
+  
+  const monthsArray = ["January","February","March","April","May","June","July",
+  "August","September","October","November","December"];
   
   const [minYear, maxYear] = d3.extent(result.monthlyVariance.map(x => x.year))  
 
@@ -145,11 +149,11 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
 
       <ToolTip
+        monthsArray={monthsArray}
         element={selectedElement}
         position={tooltipPosition}
         toolTipAttrs={tooltipAttrs}
       />
-
 
       <svg height={svgHeight} width={svgWidth} className='text-black bg-amber-50'>
         {dataWithTemperature.map( data => {
@@ -180,28 +184,31 @@ export default function Home() {
             svgWidth={padding.Left + rectWidth*(maxYear - minYear)}
             color='black'
           />
+
+          
+          <AxisLeft
+            monthsArray={monthsArray}
+            rectHeight={rectHeight}
+            padding={padding}
+            svgHeight={padding.Top + 13*rectHeight}
+            color='black'
+          />
+
       </svg>
     </main>
   )
 }
 
 interface ToolTipProps {
+  monthsArray: string[];
   element: SelectedElementType;
   position: ToolTipPositionProps;
   toolTipAttrs: string;
 }
 
-function ToolTip({element, position, toolTipAttrs}: ToolTipProps) {
+function ToolTip({monthsArray, element, position, toolTipAttrs}: ToolTipProps) {
 
-  function numberToMonth(numberMonth:number) : string {
-    const monthArray = ["January","February","March","April","May","June","July",
-    "August","September","October","November","December"];
-
-    return monthArray[numberMonth - 1];
-  }
-  
   return (
-
     <div id='tooltip' 
         data-year={element.year}
         className={`flex flex-col justify-center items-center bg-slate-600 font-bold text-base text-white p-2 absolute rounded select-none pointer-events-none transition-opacity duration-500 ${toolTipAttrs}`}
@@ -209,7 +216,7 @@ function ToolTip({element, position, toolTipAttrs}: ToolTipProps) {
     >
     {element && (
       <>
-        <p>{element.year} - {numberToMonth(element.month)}</p>
+        <p>{element.year} - {monthsArray[element.month - 1]}</p>
         <p>{element.temperature}°C</p>
         <p>{element.variance > 0 && '+'}{element.variance}°C</p> 
       </>
@@ -241,7 +248,7 @@ function AxisBottom({xScale, padding, svgHeight, svgWidth, color}: AxisBottomPro
       <g id='x-axis'>
         <path
         // d="M x1 y1 H x2 y2"
-        d={`M ${padding.Left} ${svgHeight  + 1} H ${svgWidth}`}
+        d={`M ${padding.Left - 7} ${svgHeight  + 1} H ${svgWidth}`}
         stroke="currentColor"
         strokeWidth={1}
         />
@@ -271,6 +278,48 @@ function AxisBottom({xScale, padding, svgHeight, svgWidth, color}: AxisBottomPro
   )
 }
 
+interface AxisLeftProperties extends AxisProperties {
+  monthsArray: string[];
+  rectHeight: number;
+}
+
+
+function AxisLeft({monthsArray, rectHeight, padding, svgHeight, color}: AxisLeftProperties) {
+
+  return (
+      <g id='y-axis'>
+        <path
+          // d="M x1 y1 L x2 y2"
+          d={`M ${padding.Left - 1} ${svgHeight + 7} L ${padding.Left -1} ${padding.Top + 30}`}
+          stroke="currentColor"
+        />
+
+      {monthsArray.map((value,index) => (
+            <g
+              className='tick'
+              key={index}
+              transform={`translate(${padding.Left - 5}, ${padding.Top + 50 + index*rectHeight})`}
+            >
+              <line
+                x2="4"
+                x1="-3"
+                stroke="currentColor"
+              />
+              <text
+                key={index}
+                fill={color}
+                style={{
+                  fontSize: "10px",
+                  textAnchor: "middle",
+                  transform: "translateX(-30px) translateY(3px)"
+                }}>
+                { value }
+              </text>
+            </g>
+      ))}
+      </g>
+  )
+}
 
 
 function useData(url: string) {
