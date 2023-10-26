@@ -42,11 +42,13 @@ export default function Home() {
   const [tooltipPosition, setTooltipPosition] = useState<ToolTipPositionProps>({ top: 0, left: 0 });
   const [tooltipAttrs, setToolTipAttrs] = useState('opacity-0 transition-all duration-200');
 
+  let xScale: d3.ScaleLinear<number, number, never> = d3.scaleLinear();
+
   if (result === undefined) {
     return;
   }
   
-  const [minYear, maxYear] = d3.extent(result.monthlyVariance.map(x => x.year))
+  const [minYear, maxYear] = d3.extent(result.monthlyVariance.map(x => x.year))  
 
   let dataWithTemperature: DataYearObjectArray[] = []
   let monthlyData: DataPlotWithTemperature[] = []
@@ -59,10 +61,12 @@ export default function Home() {
       monthlyData = []
     } 
     monthlyData.push(
-        { month: data.month, variance: parseFloat(data.variance.toFixed(1)), temperature:parseFloat((result.baseTemperature + data.variance).toFixed(2))})
+        { 
+          month: data.month, variance: parseFloat(data.variance.toFixed(1)), 
+          temperature:parseFloat((result.baseTemperature + data.variance).toFixed(2))
+        })
     
   })
-
 
   function handleMouseEnter(e: React.MouseEvent<SVGRectElement, MouseEvent>, year: number, month: number) {
 
@@ -80,17 +84,17 @@ export default function Home() {
 
     setTooltipPosition({
       top: clientY + toolTipPadding, 
-      left: clientX-30,
+      left: clientX-60,
     });
-    setToolTipAttrs('tooltip active opacity-80')
+    setToolTipAttrs('opacity-80')
+    
   }
 
   function handleMouseLeave() {
-    setToolTipAttrs('tooltip opacity-0')
+    setToolTipAttrs('opacity-0')
   }
 
   function tempColor(temp: number) : string {
-    
     if (temp < 2.8) {
       return "rgb(21, 81, 161)"
     }
@@ -110,10 +114,12 @@ export default function Home() {
       return "rgb(253, 174, 97)";
     }else if (temp >= 10.6 && temp < 11.7) {
       return "rgb(244, 109, 67)";
-    }else if (temp >= 11.7 && temp <= 12.8) {
+    }else if (temp >= 11.7 && temp < 12.8) {
       return "rgb(215, 48, 39)";
-    } else {
+    } else if (temp >= 12.8) {
       return "rgb(154, 11, 4)";
+    } else {
+      throw new Error(`Temperature ${temp} is not in the range of valid values`)
     }
   }
 
@@ -131,6 +137,7 @@ export default function Home() {
   if (minYear === undefined || maxYear === undefined) {
     return
   }
+    xScale = d3.scaleLinear([minYear, maxYear], [padding.Left, padding.Left + rectWidth*(maxYear - minYear)]);
 
   let startXcoordinate = padding.Left - rectWidth;
   let startYcoordinate = padding.Top - rectHeight;
@@ -166,6 +173,13 @@ export default function Home() {
             })
           )
         })}
+          <AxisBottom
+            xScale={xScale}
+            padding={padding}
+            svgHeight={padding.Top + 13*rectHeight}
+            svgWidth={padding.Left + rectWidth*(maxYear - minYear)}
+            color='black'
+          />
       </svg>
     </main>
   )
@@ -190,7 +204,7 @@ function ToolTip({element, position, toolTipAttrs}: ToolTipProps) {
 
     <div id='tooltip' 
         data-year={element.year}
-        className={`flex flex-col justify-center items-center bg-slate-600 font-bold text-base text-white p-2 absolute rounded select-none pointer-events-none ${toolTipAttrs}`}
+        className={`flex flex-col justify-center items-center bg-slate-600 font-bold text-base text-white p-2 absolute rounded select-none pointer-events-none transition-opacity duration-500 ${toolTipAttrs}`}
         style={{ top: position.top + 'px', left: position.left + 'px' }}
     >
     {element && (
@@ -203,6 +217,61 @@ function ToolTip({element, position, toolTipAttrs}: ToolTipProps) {
 </div>
   )
 }
+
+
+interface AxisProperties {
+  svgHeight: number;  
+  padding: {
+   Bottom: number;
+   Top: number;
+   Left: number;
+   Right: number;
+  }
+  color: string;
+}
+
+interface AxisBottomProperties extends AxisProperties {
+  xScale: d3.ScaleLinear<number, number, never>;
+  svgWidth: number;
+}
+
+function AxisBottom({xScale, padding, svgHeight, svgWidth, color}: AxisBottomProperties) {
+  
+  return (
+      <g id='x-axis'>
+        <path
+        // d="M x1 y1 H x2 y2"
+        d={`M ${padding.Left} ${svgHeight  + 1} H ${svgWidth}`}
+        stroke="currentColor"
+        strokeWidth={1}
+        />
+      {xScale && xScale.ticks(30).map((value,index) => (
+              <g
+              className='tick'
+              key={index}
+              transform={`translate(${xScale(value)}, ${svgHeight})`}
+              >
+                <line
+                  y2="6"
+                  stroke="currentColor"
+                />
+                <text
+                  key={index}
+                  fill={color}
+                  style={{
+                    fontSize: "10px",
+                    textAnchor: "middle",
+                    transform: "translateY(20px)"
+                  }}>
+                  { value }
+                </text>
+              </g>
+      ))}
+    </g>
+  )
+}
+
+
 
 function useData(url: string) {
   const [data, setData] = useState<Data>();
