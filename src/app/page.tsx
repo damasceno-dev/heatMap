@@ -2,7 +2,6 @@
 "use client"
 import { useEffect, useState } from "react"
 import * as d3 from 'd3';
-import { getDataWithTemperature } from "./deletedCode";
 
 interface DataPlot {
   year: number;
@@ -44,11 +43,9 @@ export default function Home() {
 
   let xScale: d3.ScaleLinear<number, number, never> = d3.scaleLinear();
 
-  if (result === undefined) {
-    return;
-  }
-
-  
+  // if (result === undefined) {
+  //   return;
+  // }  
   const monthsArray = ["January","February","March","April","May","June","July",
   "August","September","October","November","December"];
   
@@ -130,9 +127,9 @@ export default function Home() {
   const svgHeight = 540
   const svgWidth = 1603
   const padding = {
-    Left: 100,
+    Left: 140,
     Right: 50,
-    Top: 35,
+    Top: 15,
     Bottom: 150
   }
   const rectWidth = 5;
@@ -147,54 +144,58 @@ export default function Home() {
   let startYcoordinate = padding.Top - rectHeight;
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="wrapper flex flex-col items-center ">
+        <h1 id='title' className="bg-amber-50 text-black w-full text-center text-3xl pt-4 font-bold">Monthly Global Land-Surface Temperature</h1>
+        <h2 id='description' className="bg-amber-50 text-black w-full text-center text-xl pt-4 mb-0 pb-0">{minYear} - {maxYear}: base temperature {result.baseTemperature}°C</h2>
+        <ToolTip
+          monthsArray={monthsArray}
+          element={selectedElement}
+          position={tooltipPosition}
+          toolTipAttrs={tooltipAttrs}
+        />
 
-      <ToolTip
-        monthsArray={monthsArray}
-        element={selectedElement}
-        position={tooltipPosition}
-        toolTipAttrs={tooltipAttrs}
-      />
+        <svg height={svgHeight} width={svgWidth} className='text-black bg-amber-50'>
+          {dataWithTemperature.map( data => {
+            startYcoordinate = padding.Top;
+            startXcoordinate += rectWidth;
+            return (
+              data.monthlyData.map((monthData) => {
+                startYcoordinate += rectHeight;
+                return (
+                  <rect key={data.year.toString() + ' - ' + monthData.month.toString()} width={5} height={33} 
+                        fill={tempColor(monthData.temperature)} 
+                        x={startXcoordinate} 
+                        y={startYcoordinate}
+                        className="cell hover:stroke-black"
+                        data-month={monthData.month}
+                        data-year={data.year}
+                        data-temp={monthData.temperature}
+                        onMouseEnter={(event) => {handleMouseEnter(event, data.year, monthData.month)}}
+                        onMouseLeave={handleMouseLeave}
+                  />
+                )
+              })
+            )
+          })}
+            <AxisBottom
+              xScale={xScale}
+              padding={padding}
+              svgHeight={padding.Top + 13*rectHeight}
+              svgWidth={padding.Left + rectWidth*(maxYear - minYear)}
+              color='black'
+            />
 
-      <svg height={svgHeight} width={svgWidth} className='text-black bg-amber-50'>
-        {dataWithTemperature.map( data => {
-          startYcoordinate = padding.Top;
-          startXcoordinate += rectWidth;
-          return (
-            data.monthlyData.map((monthData) => {
-              startYcoordinate += rectHeight;
-              return (
-                <rect key={data.year.toString() + ' - ' + monthData.month.toString()} width={5} height={33} 
-                      fill={tempColor(monthData.temperature)} 
-                      x={startXcoordinate} 
-                      y={startYcoordinate}
-                      className="hover:stroke-black"
-                      data-month={monthData.month}
-                      data-year={data.year}
-                      onMouseEnter={(event) => {handleMouseEnter(event, data.year, monthData.month)}}
-                      onMouseLeave={handleMouseLeave}
-                />
-              )
-            })
-          )
-        })}
-          <AxisBottom
-            xScale={xScale}
-            padding={padding}
-            svgHeight={padding.Top + 13*rectHeight}
-            svgWidth={padding.Left + rectWidth*(maxYear - minYear)}
-            color='black'
-          />
+            
+            <AxisLeft
+              monthsArray={monthsArray}
+              rectHeight={rectHeight}
+              padding={padding}
+              svgHeight={padding.Top + 13*rectHeight}
+              color='black'
+            />
 
-          
-          <AxisLeft
-            monthsArray={monthsArray}
-            rectHeight={rectHeight}
-            padding={padding}
-            svgHeight={padding.Top + 13*rectHeight}
-            color='black'
-          />
-
-      </svg>
+        </svg>
+      </div>
     </main>
   )
 }
@@ -310,8 +311,8 @@ function AxisLeft({monthsArray, rectHeight, padding, svgHeight, color}: AxisLeft
                 fill={color}
                 style={{
                   fontSize: "10px",
-                  textAnchor: "middle",
-                  transform: "translateX(-30px) translateY(3px)"
+                  textAnchor: "end",
+                  transform: "translateX(-9px) translateY(3px)"
                 }}>
                 { value }
               </text>
@@ -323,7 +324,7 @@ function AxisLeft({monthsArray, rectHeight, padding, svgHeight, color}: AxisLeft
 
 
 function useData(url: string) {
-  const [data, setData] = useState<Data>();
+  const [data, setData] = useState<Data>({baseTemperature: 8.66, monthlyVariance: [{year: 1753, month: 1, variance: -1.366}]});
   useEffect(() => {
     let ignore = false;
     fetch(url)
