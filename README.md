@@ -1,3 +1,13 @@
+
+
+## Personal notes
+Made to get FCC certification. Link on code pen for running with tests: https://codepen.io/damasceno-dev/pen/MWLaGmE?editors=1010
+
+Used: -Next.js with typescript and tailwind
+      -d3.js
+
+This project don't manipulate the DOM outside React. It does not uses useRef Hook because "React uses a fancy reconciliation algorithm to decide which DOM elements to update. It does this by creating a virtual DOM and diffing against the real DOM. When we mutate the DOM outside of React render methods, we’re removing the performance benefits we get and will unnecessarily re-render elements." -Amelia Wattenberger in Fullstack Data Visualization with D3
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
